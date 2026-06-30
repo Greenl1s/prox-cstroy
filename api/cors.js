@@ -1,6 +1,6 @@
 const YANDEX_OAUTH_TOKEN = 'y0__wgBEK3T6dMDGIXTRCCQwt-NGDD38tqJCP5ZytMKwuD_9zAzbbcQKjP-W14M'; 
 const WRITE_SECRET = 'mySecretKey123';
-const FILE_PATH = '/Учёт.xlsx';
+const FILE_PATH = '/Учет.xlsx';
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
