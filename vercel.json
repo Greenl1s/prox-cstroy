@@ -2,7 +2,7 @@
   "rewrites": [{ "source": "/(.*)", "destination": "/api/cors" }]
   "functions": {
     "api/cors.js": {
-      "maxDuration": 60
+      "maxDuration": 120
     }
   }
 }
