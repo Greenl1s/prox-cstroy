@@ -2,7 +2,7 @@ const YANDEX_OAUTH_TOKEN = 'y0__wgBEK3T6dMDGIXTRCCQwt-NGDD38tqJCP5ZytMKwuD_9zAzb
 const WRITE_SECRET = 'mySecretKey123';
 
 export default async function handler(req, res) {
-  // ВСЕГДА добавляем CORS-заголовки к любому ответу
+  // Всегда добавляем CORS-заголовки к любому ответу
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, PUT, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-Write-Secret, Authorization');
@@ -29,6 +29,7 @@ export default async function handler(req, res) {
       headers['X-Write-Secret'] = secret;
     }
 
+    // ⚠️ САМИ делаем запрос, а не перенаправляем браузер
     const response = await fetch(targetUrl, {
       method: req.method,
       headers: headers,
