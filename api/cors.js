@@ -1,30 +1,37 @@
-const YANDEX_OAUTH_TOKEN = 'y0__wgBEK3T6dMDGMuvQiCp95HVFzD38tqJCD_9zO1sUwHlVUnaAOeiJ_uRkBA1';
+const YANDEX_OAUTH_TOKEN = 'y0__wgBEK3T6dMDGMuvQiCp95HVFzD38tqJCD_9zO1sUwHlVUnaAOeiJ_uRkBA1'; 
 const WRITE_SECRET = 'mySecretKey123';
-const FILE_PATH = '/Учёт.xlsx';
 
 export default async function handler(req, res) {
-  // Добавляем CORS-заголовки к любому ответу
+  // Разрешаем CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, PUT, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-Write-Secret');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-Write-Secret, Authorization');
 
   // Preflight
   if (req.method === 'OPTIONS') {
     return res.status(204).end();
   }
 
-  // Получаем целевой URL из параметра
   const targetUrl = req.query.url;
   if (!targetUrl) {
     return res.status(400).json({ error: 'Missing ?url= parameter' });
   }
 
   try {
-    // Подготавливаем заголовки для проксируемого запроса
-    const headers = {
+    // Проверяем, является ли запрос запросом к API Яндекс.Диска для получения upload URL
+    const isYandexApi = targetUrl.includes('cloud-api.yandex.net/v1/disk/resources/upload');
+
+    // Для запросов к API Яндекс.Диска (GET upload URL) добавляем Authorization
+    let headers = {
       'User-Agent': 'Mozilla/5.0'
     };
-    // Если есть секрет – передаём его дальше (для Яндекс.Диска)
+    if (isYandexApi && req.method === 'GET') {
+      // Проверяем, не передан ли уже Authorization от клиента (но клиент его не шлёт)
+      // Поэтому используем токен из прокси
+      headers['Authorization'] = 'OAuth ' + YANDEX_OAUTH_TOKEN;
+    }
+
+    // Если клиент передал X-Write-Secret – передаём его дальше (для PUT)
     const secret = req.headers['x-write-secret'];
     if (secret) {
       headers['X-Write-Secret'] = secret;
@@ -37,12 +44,16 @@ export default async function handler(req, res) {
       body: req.method !== 'GET' && req.method !== 'HEAD' ? req.body : undefined,
     });
 
-    // Получаем данные ответа
-    const data = await response.text();
+    // Если ответ от Яндекс.Диска – возвращаем JSON
+    if (response.headers.get('content-type')?.includes('application/json')) {
+      const data = await response.json();
+      return res.status(response.status).json(data);
+    }
 
-    // Возвращаем ответ с правильным Content-Type
+    // Иначе возвращаем как текст
+    const data = await response.text();
     res.status(response.status)
-       .setHeader('Content-Type', response.headers.get('content-type') || 'application/octet-stream')
+       .setHeader('Content-Type', response.headers.get('content-type') || 'text/plain')
        .send(data);
   } catch (error) {
     console.error('Proxy error:', error);
