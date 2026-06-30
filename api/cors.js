@@ -2,7 +2,6 @@ const YANDEX_OAUTH_TOKEN = 'y0__wgBEK3T6dMDGIXTRCCQwt-NGDD38tqJCP5ZytMKwuD_9zAzb
 const WRITE_SECRET = 'mySecretKey123';
 
 export default async function handler(req, res) {
-  // CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, PUT, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-Write-Secret, Authorization');
@@ -34,19 +33,18 @@ export default async function handler(req, res) {
       body: req.method !== 'GET' && req.method !== 'HEAD' ? req.body : undefined,
     });
 
-    // Для бинарных файлов (Excel) – возвращаем как Buffer
     const contentType = response.headers.get('content-type') || '';
     const isBinary = contentType.includes('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet') ||
                      contentType.includes('application/octet-stream') ||
                      targetUrl.includes('downloader.disk.yandex.ru');
 
     if (isBinary) {
+      // Для бинарных данных возвращаем Buffer без сжатия
       const buffer = await response.arrayBuffer();
-      // Отключаем сжатие и возвращаем бинарные данные
       res.status(response.status)
-         .setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+         .setHeader('Content-Type', contentType)
          .setHeader('Content-Length', buffer.byteLength)
-         .setHeader('Content-Encoding', 'identity')
+         .setHeader('Content-Encoding', 'identity') // отключаем сжатие
          .send(Buffer.from(buffer));
     } else {
       const data = await response.text();
